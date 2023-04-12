@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense App</title>
+</head>
+<body>
+    <header><h1>Expense App</h1></header>
+    <form id="my-form" onsubmit="storeDetails">
+        <label for="amount">Choose Amount:</label>
+        <input type="number" id="amount" name="expenseAmount"><br><br>
+        <label for="description">Choose Description:</label>
+        <input type="text" id="description" name="expenseDescription"><br><br>
+        <label for="category">Choose Category:</label>
+        <select id="category">
+            <option value="movies">Movies</option>
+            <option value="travelling">Travelling</option>
+            <option value="shopping">Shopping</option>
+        </select>
+        <button type="submit" id="submit">Add Expense</button>
+    </form>
+    <ul id="items">List of Items</ul>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.2/axios.min.js" integrity="sha512-NCiXRSV460cHD9ClGDrTbTaw0muWUBf/zB/yLzJavRsPNUl9ODkUVmUHsZtKu17XknhsGlmyVoJxLg/ZQQEeGA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        let submitbn = document.getElementById('submit');
+        let items = document.getElementById('items');
+
+        submitbn.addEventListener('click', storeDetails);
+
+function storeDetails(e) {
+    e.preventDefault();
+
+    let amount = document.getElementById('amount').value;
+    let description = document.getElementById('description').value;
+    let category = document.getElementById('category').value;
+    
+    let expenseDetails = {
+        amount,
+        description,
+        category
+    }
+    console.log(expenseDetails)
+
+    // showUserDetails(expenseDetails);
+
+    axios.post('http://localhost:4000/expense/add-expense', expenseDetails)
+    .then((response) => {
+        showUserDetails(response.data.newExpenseDetail);
+        console.log(response)
+    })
+    .catch((err) => {
+        document.body.innerHTML = document.body.innerHTML+`<h4>Something went Wrong</h4>`;
+        console.log(err);
+    })
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    axios.get('http://localhost:4000/expense/get-expenses').then((response) => {
+        for(let i=0; i<response.data.allExpensesDetails.length; i++) {
+            showUserDetails(response.data.allExpensesDetails[i]);
+        }
+    }).catch((error) => console.log(error));
+})
+
+function showUserDetails(expenseDetails) {
+    let li = document.createElement('li');
+    li.textContent = expenseDetails.amount + ' - '+expenseDetails.description+' - '+expenseDetails.category;
+
+    let deletebtn = document.createElement('input');
+    deletebtn.type = 'button';
+    deletebtn.value = 'delete';
+
+    function deleteId(itemId) {
+        axios.delete('http://localhost:4000/expense/delete-expense/'+itemId)
+        .then((res) => console.log(res))
+        .catch(err => console.log(err))
+    }
+
+    let editbtn = document.createElement('input');
+    editbtn.type = 'button';
+    editbtn.value = 'edit';
+
+    function editId(itemId) {
+        axios.put('http://localhost:4000/expense/delete-expense/'+itemId)
+        .then((res) => console.log(res))
+    }
+
+    li.appendChild(editbtn);
+    li.appendChild(deletebtn);
+
+    deletebtn.onclick = () => {
+        items.removeChild(li);
+        deleteId(expenseDetails.id);
+    }
+
+    editbtn.onclick = () => {
+        items.removeChild(li);
+        editId(expenseDetails.id);
+        deleteId(expenseDetails.id);
+        document.getElementById('amount').value = expenseDetails.amount;
+        document.getElementById('description').value = expenseDetails.description;
+        document.getElementById('category').value = expenseDetails.category;
+    }
+    items.appendChild(li);
+}
+    </script>
+</body>
+</html>
